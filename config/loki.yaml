@@ -1,0 +1,26 @@
+auth_enabled: false # Authentication disabled
+
+server:
+  http_listen_port: 3100 # HTTP server listening port
+
+common:
+  ring:
+    instance_addr: 127.0.0.1 # Instance address for the ring
+    kvstore:
+      store: inmemory # Key-value store type
+  replication_factor: 1 # Replication factor for data redundancy
+  path_prefix: /tmp/loki # Prefix for data storage path
+  storage:
+    filesystem:
+      chunks_directory: /tmp/loki/chunks # Directory for storing chunks
+      rules_directory: /tmp/loki/rules # Directory for storing rules
+
+schema_config:
+  configs:
+  - from: 2020-05-15 # Starting time for this configuration
+    store: boltdb-shipper # Data store type
+    object_store: filesystem # Object store type
+    schema: v11 # Schema version
+    index:
+      prefix: index_ # Prefix for index files
+      period: 24h # Period for index rotation

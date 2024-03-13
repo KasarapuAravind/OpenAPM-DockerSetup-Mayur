@@ -1,0 +1,57 @@
+stream_over_http_enabled: true # HTTP streaming enabled
+server:
+  http_listen_port: 3200 # HTTP server listening port
+  log_level: info # Log level set to info
+
+query_frontend:
+  search:
+    duration_slo: 5s # Search duration Service Level Objective (SLO)
+    throughput_bytes_slo: 1.073741824e+09 # Throughput Service Level Objective (SLO)
+  trace_by_id:
+    duration_slo: 5s # Trace by ID duration SLO
+
+distributor:
+  receivers: # List of receivers for Tempo
+    jaeger: # Jaeger receiver
+      protocols: # Protocols supported by Jaeger receiver
+        thrift_http: # Thrift HTTP protocol
+        grpc: # gRPC protocol
+        thrift_binary: # Thrift binary protocol
+        thrift_compact: # Thrift compact protocol
+    zipkin: # Zipkin receiver
+    otlp: # OTLP receiver
+      protocols: # Protocols supported by OTLP receiver
+        http: # HTTP protocol
+        grpc: # gRPC protocol
+    opencensus: # OpenCensus receiver
+
+ingester:
+  max_block_duration: 5m # Maximum block duration for ingester
+
+compactor:
+  compaction:
+    block_retention: 1h # Block retention period for compaction
+
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo # Source label for metrics generator
+      cluster: docker-compose # Cluster label for metrics generator
+  storage:
+    path: /tmp/tempo/generator/wal # Path for storage of metrics generator WAL
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write # URL for remote write endpoint
+        send_exemplars: true # Send exemplars to remote write
+
+storage:
+  trace:
+    backend: local # Backend configuration for trace storage
+    wal:
+      path: /tmp/tempo/wal # Path for WAL storage
+    local:
+      path: /tmp/tempo/blocks # Path for local storage of blocks
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics] # Processors enabled for metrics generator

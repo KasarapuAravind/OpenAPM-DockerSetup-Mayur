@@ -1,0 +1,50 @@
+# Recievers of Open Telemetry Collector
+receivers:
+  otlp:  # OpenTelemetry receiver
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317 # gRPC endpoint for OTLP receiver
+      http:
+        cors:
+          allowed_origins:
+          - http://*
+          - https://*
+        endpoint: 0.0.0.0:4318 # HTTP endpoint for OTLP receiver
+
+# Processors of Open Telemetry Collector
+processors:
+  batch: # Batch processor
+
+# Exporters of Open Telemetry Collector
+exporters: 
+  otlp: # OTLP exporter
+    endpoint: tempo:4317 # OTLP endpoint for exporter
+    tls:
+      insecure: true
+  loki: # Loki exporter
+    endpoint: "http://loki:3100/loki/api/v1/push" # Loki endpoint for exporter
+    headers:
+      X-Scope-OrgID: "anonymous" # Organization ID for Loki exporter
+  prometheusremotewrite/mimir: # Prometheus Remote Write (Mimir) exporter
+    endpoint: "http://mimir:9009/api/v1/push" # Mimir endpoint for exporter
+    headers:
+      X-Scope-OrgID: "anonymous"
+
+# Services of Open Telemetry Collector
+service:
+  pipelines:
+    traces:
+      receivers: [otlp] # Traces pipeline with OTLP receiver
+      exporters: [otlp] # Traces pipeline with OTLP exporter
+    metrics:
+      receivers: [otlp] # Metrics pipeline with OTLP receiver
+      processors: [batch] # Metrics pipeline with batch processor
+      exporters: [prometheusremotewrite/mimir] # Metrics pipeline with OTLP exporter
+    logs:
+      receivers: [otlp] # Logs pipeline with OTLP receiver
+      processors: [batch] # Logs pipeline with batch processor
+      exporters: [loki] # Logs pipeline with OTLP exporter
+  telemetry: # Otel collector Telemetry configuration for metrics and logs
+    logs:
+    metrics:
+      address: 0.0.0.0:8888 

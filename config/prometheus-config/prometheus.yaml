@@ -1,0 +1,20 @@
+global:
+  scrape_interval:     15s # Interval between Prometheus scrapes
+  evaluation_interval: 15s # Interval for Prometheus rule evaluation
+
+scrape_configs:
+  - job_name: 'prometheus' # Prometheus scrape job
+    static_configs:
+      - targets: [ 'localhost:9090' ] # Targets for Prometheus scrape
+  - job_name: 'tempo' # Tempo scrape job
+    static_configs:
+      - targets: [ 'tempo:3200' ] # Targets for Tempo scrape
+  - job_name: 'otelcollector' # OpenTelemetry Collector scrape job
+    static_configs:
+      - targets: [ 'otel-collector:8888' ] # Targets for OpenTelemetry Collector scrape
+  - job_name: 'mimir' # Mimir scrape job
+    static_configs:
+      - targets: ['mimir:9009'] # Targets for Mimir scrape
+  - job_name: 'loki' # Loki scrape job
+    static_configs:
+      - targets: ['loki:3100'] # Targets for Loki scrape

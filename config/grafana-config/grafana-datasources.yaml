@@ -1,0 +1,65 @@
+apiVersion: 1 # Version of the API
+
+datasources:
+# Prometheus datasource
+- name: Prometheus
+  type: prometheus # Datasource type
+  uid: prometheus # Unique identifier for Prometheus
+  access: proxy # Access mode
+  orgId: 1 # Organization ID
+  url: http://prometheus:9090 # URL for Prometheus
+  basicAuth: false # Basic authentication disabled
+  isDefault: false # Not the default datasource
+  version: 1 # Version of the datasource
+  editable: false # Not editable
+  jsonData:
+    httpMethod: GET # HTTP method for Prometheus datasource
+# Tempo datasource
+- name: Tempo
+  type: tempo # Datasource type
+  access: proxy # Access mode
+  orgId: 1 # Organization ID
+  url: http://tempo:3200 # URL for Tempo
+  basicAuth: false # Basic authentication disabled
+  isDefault: true # Default datasource
+  version: 1 # Version of the datasource
+  editable: false # Not editable
+  apiVersion: 1 # Version of the API for Tempo
+  uid: tempo # Unique identifier for Tempo
+  jsonData:
+    httpMethod: GET # HTTP method for Tempo datasource
+    serviceMap:
+      datasourceUid: prometheus # Mapping to Prometheus datasource
+# Loki datasource
+- name: Loki
+  type: loki # Datasource type
+  access: proxy # Access mode
+  url: http://loki:3100 # URL for Loki
+  jsonData:
+     httpHeaderName1: "X-Scope-OrgID" # HTTP header name for Loki
+  secureJsonData:
+     httpHeaderValue1: "tenant1" # Secure HTTP header value for Loki
+# Mimir datasource
+- name: Mimir
+  type: prometheus # Datasource type
+  access: proxy # Access mode
+  uid: mimir # Unique identifier for Mimir
+  url: http://mimir:9009/prometheus # URL for Mimir
+  jsonData:
+    exemplarTraceIdDestinations:
+      - datasourceUid: tempo
+        name: traceID
+    httpMethod: POST # HTTP method for Mimir datasource
+    timeInterval: "2s" # Time interval for Mimir datasource
+# Mimir Alertmanager datasource
+- name: Mimir Alertmanager
+  type: alertmanager
+  access: proxy
+  uid: alertmanager
+  url: http://mimir:9009/
+  editable: false
+  jsonData:
+    exemplarTraceIdDestinations:
+      httpHeaderName1: "X-Scope-OrgID"
+      implementation: "anonymus"
+    timeInterval: "2s"

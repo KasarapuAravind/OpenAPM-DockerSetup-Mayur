@@ -1,0 +1,80 @@
+version: "3"
+services:
+
+  otel-collector:
+    # OpenTelemetry Collector service
+    # image: otel/opentelemetry-collector:0.86.0 - kept for reference
+    image: otel/opentelemetry-collector-contrib:latest
+    command: [ "--config=/etc/otel-collector.yaml" ] # Specifies the configuration file for the collector
+    volumes:
+      - ./config/otel-collector.yaml:/etc/otel-collector.yaml # Mounts the local configuration file into the container
+    ports:
+      - "4317:4317" # Exposes OpenTelemetry gRPC port
+      - "4318:4318" # Exposes OpenTelemetry HTTP port
+      - "8888:8888" # Exposes OpenTelemetry Health Check port
+
+  tempo:
+    # Grafana Tempo service
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ] # Specifies the configuration file for Tempo
+    volumes:
+      - ./config/tempo.yaml:/etc/tempo.yaml # Mounts the local configuration file into the container
+    ports:
+      - "14268:14268"  # Exposes Jaeger Ingest port
+      - "3200:3200"   # Exposes Tempo port
+      - "9095:9095" # Exposes Tempo gRPC port
+      - "9411:9411"   # Exposes Zipkin port
+
+  mimir:
+    # Grafana Mimir service
+    image: grafana/mimir:2.10.4
+    command: ["-ingester.native-histograms-ingestion-enabled=true", "-config.file=/etc/mimir.yaml"] # Specifies the configuration file for Mimir
+    volumes:
+      - "./config/mimir.yaml:/etc/mimir.yaml" # Mounts the local configuration file into the container
+      - "./config/alertmanager-fallback-config.yaml:/etc/alertmanager-fallback-config.yaml"
+    ports:
+      - "9009:9009" # Exposes Mimir port
+
+  loki:
+    # Grafana Loki service
+    image: grafana/loki:latest
+    command: [ "-config.file=/etc/loki.yaml" ] # Specifies the configuration file for Loki
+    volumes:
+      - "./config/loki.yaml:/etc/loki.yaml" # Mounts the local configuration file into the container
+    ports:
+      - "3100:3100" # Exposes Loki port
+
+  prometheus:
+    # Prometheus service
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus.yaml # Specifies the configuration file for Prometheus
+      - --web.enable-remote-write-receiver # Enables remote write receiver for Prometheus
+      - --enable-feature=exemplar-storage # Enables exemplar storage feature in Prometheus
+    volumes:
+      - ./config/prometheus-config/prometheus.yaml:/etc/prometheus.yaml # Mounts the local configuration file into the container
+    ports:
+      - "9090:9090" # Exposes Prometheus port
+
+  grafana:
+    # Grafana service
+    image: grafana/grafana:10.2.3
+    volumes:
+      - ./config/grafana-config/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./config/grafana-config/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./config/grafana-config/dashbaords/dashboard-15983.json:/var/lib/grafana/dashboards/OtelCollector.json:ro
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true # Enables anonymous access to Grafana
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin # Sets the role for anonymous users
+      - GF_AUTH_DISABLE_LOGIN_FORM=true # Disables the login form
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor traceQLStreaming metricsSummary # Enables specific features in Grafana
+    ports:
+      - "3000:3000" # Exposes Grafana port
+
+  promtail:
+    # Promtail service
+    image: grafana/promtail:2.9.2
+    command: [ "-config.file=/etc/promtail/config.yaml"] # Specifies the configuration file for Promtail
+    volumes:
+      - ./config/prometheus-config/promtail-local-config.yaml:/etc/promtail/config.yaml:ro # Mounts the local configuration file into the container
+      - /var/run/docker.sock:/var/run/docker.sock # Mounts Docker socket for log collection
